@@ -140,12 +140,74 @@ module fv_treat_da_inc_mod
                                get_var3_r4, &
                                get_var1_real, &
                                check_var_exists
+  use module_get_cubed_sphere_inc, only: read_netcdf_inc, &
+                                         iau_internal_data_type
   implicit none
   private
 
-  public :: read_da_inc,remap_coef
+  public :: read_da_inc, read_da_inc_cubed_sphere, remap_coef
 
 contains
+   subroutine read_da_inc_cubed_sphere(Atm, fv_domain, bd, npz_in, nq, u, v, q, delp, pt, delz, &
+                                       is_in, js_in, ie_in, je_in, isc_in, jsc_in, iec_in, jec_in )
+    type(fv_atmos_type),       intent(inout) :: Atm
+    type(domain2d),            intent(inout) :: fv_domain
+    type(fv_grid_bounds_type), intent(IN) :: bd
+    integer,                   intent(IN) :: npz_in, nq, is_in, js_in, ie_in, je_in, isc_in, jsc_in, iec_in, jec_in
+    real, intent(inout) :: u(is_in:ie_in, js_in:je_in, npz_in)  ! D grid zonal wind (m/s)
+    real, intent(inout) :: v(is_in:ie_in, js_in:je_in, npz_in)  ! D grid meridional wind (m/s)
+    real, intent(inout) :: delp(is_in:ie_in, js_in:je_in, npz_in)  ! pressure thickness (pascal)
+    real, intent(inout) :: pt(  is_in:ie_in, js_in:je_in, npz_in)  ! temperature (K)
+    real, intent(inout) :: q(   is_in:ie_in, js_in:je_in, npz_in, nq)  !
+    real, intent(inout) :: delz(isc_in:iec_in, jsc_in:jec_in, npz_in)  !
+
+    character(len=128)           :: fname
+    integer                      :: sphum, liq_wat, spo, spo2, spo3, o3mr
+    type(iau_internal_data_type) :: increment_data
+
+    ! Get increment filename
+    fname = 'INPUT/'//Atm%flagstruct%res_latlon_dynamics
+
+    ! Ensure file exists
+    if ( .not. file_exists(fname) ) then
+      call mpp_error(FATAL,'==> Error in read_da_inc: Expected file '&
+          //trim(fname)//' for DA increment does not exist')
+    endif
+
+    ! Read increment
+    call read_netcdf_inc(fname, increment_data, Atm, .false.)
+
+    ! Get tracer indices
+    sphum   = get_tracer_index(MODEL_ATMOS, 'sphum')
+    liq_wat = get_tracer_index(MODEL_ATMOS, 'liq_wat')
+#ifdef MULTI_GASES
+    spo     = get_tracer_index(MODEL_ATMOS, 'spo')
+    spo2    = get_tracer_index(MODEL_ATMOS, 'spo2')
+    spo3    = get_tracer_index(MODEL_ATMOS, 'spo3')
+#else
+    o3mr    = get_tracer_index(MODEL_ATMOS, 'o3mr')
+#endif
+
+    ! Apply increments
+    u    = u    + increment_data%ua_inc
+    v    = v    + increment_data%va_inc
+    pt   = pt   + increment_data%temp_inc
+    delp = delp + increment_data%delp_inc
+    if ( .not. Atm%flagstruct%hydrostatic ) then
+       delz = delz + increment_data%delz_inc
+    endif
+    q(:,:,:,sphum)   = q(:,:,:,sphum)   + increment_data%tracer_inc(:,:,:,sphum)
+    q(:,:,:,liq_wat) = q(:,:,:,liq_wat) + increment_data%tracer_inc(:,:,:,liq_wat)
+#ifdef MULTI_GASES
+    q(:,:,:,spo)     = q(:,:,:,spo)     + increment_data%tracer_inc(:,:,:,spo)
+    q(:,:,:,spo2)    = q(:,:,:,spo2)    + increment_data%tracer_inc(:,:,:,spo2)
+    q(:,:,:,spo3)    = q(:,:,:,spo3)    + increment_data%tracer_inc(:,:,:,spo3)
+#else
+    q(:,:,:,o3mr)    = q(:,:,:,o3mr)    + increment_data%tracer_inc(:,:,:,o3mr)
+#endif
+
+  end subroutine read_da_inc_cubed_sphere
+
   !=============================================================================
   !>@brief The subroutine 'read_da_inc' reads the increments of the diagnostic variables
   !! from the DA-generated files.

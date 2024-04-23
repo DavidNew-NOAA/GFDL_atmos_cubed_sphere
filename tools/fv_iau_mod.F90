@@ -298,7 +298,7 @@ subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testin
       call read_iau_forcing(IPD_Control,iau_state%inc1,'INPUT/'//trim(IPD_Control%iau_inc_files(1)))
     else
       write(6,*) 'calling read_netcdf_inc with ',trim(IPD_Control%iau_inc_files(1))
-      call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(1)),iau_state%inc1,Atm,mygrid,.false.)
+      call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(1)),iau_state%inc1,Atm(mygrid),.false.)
     endif
     if (nfiles.EQ.1) then  ! only need to get incrments once since constant forcing over window
        call setiauforcing(IPD_Control,IAU_Data,iau_state%wt)
@@ -314,7 +314,7 @@ subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testin
        if(IPD_Control%iau_gaussian) then
          call read_iau_forcing(IPD_Control,iau_state%inc2,'INPUT/'//trim(IPD_Control%iau_inc_files(2)))
        else
-         call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(2)),iau_state%inc2,Atm,mygrid,.false.)
+         call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(2)),iau_state%inc2,Atm(mygrid),.false.)
        endif
     endif
 !   print*,'in IAU init',dt,rdt
@@ -405,7 +405,7 @@ subroutine getiauforcing(IPD_Control,IAU_Data,Atm,mygrid )
             if(IPD_Control%iau_gaussian) then
               call read_iau_forcing(IPD_Control,iau_state%inc2,'INPUT/'//trim(IPD_Control%iau_inc_files(itnext)))
             else
-              call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(itnext)),iau_state%inc2,Atm,mygrid,.false.)
+              call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(itnext)),iau_state%inc2,Atm(mygrid),.false.)
             endif
          endif
          call updateiauforcing(IPD_Control,IAU_Data,iau_state%wt)

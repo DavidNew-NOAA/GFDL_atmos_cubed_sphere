@@ -52,12 +52,11 @@ module module_get_cubed_sphere_inc
 
   end function
 
-  subroutine read_netcdf_inc(filename, increment_data, Atm, mygrid, &
+  subroutine read_netcdf_inc(filename, increment_data, Atm, &
                           testing, im_ret, jm_ret, pf_ret, tileCount, tests_passed,rc)
     character(*), intent(in)                         :: filename
     type(iau_internal_data_type), intent(inout)      :: increment_data
-    type (fv_atmos_type), allocatable, intent(inout) :: Atm(:)
-    integer, intent(in)                              :: mygrid
+    type (fv_atmos_type), intent(inout)              :: Atm
     logical, intent(in)                              :: testing
     integer, optional, intent(out)                   :: im_ret
     integer, optional, intent(out)                   :: jm_ret
@@ -107,9 +106,9 @@ module module_get_cubed_sphere_inc
       mpi_comm = 0
     else 
       testval = 1.0
-      mytile = Atm(mygrid)%tile_of_mosaic
+      mytile = Atm%tile_of_mosaic
       mype = mpp_pe()
-      call mpp_get_current_pelist(Atm(mygrid)%pelist, commID=mpi_comm)
+      call mpp_get_current_pelist(Atm%pelist, commID=mpi_comm)
     endif
     par = .false.
 
@@ -319,7 +318,7 @@ module module_get_cubed_sphere_inc
       call mpp_get_current_pelist(Atm(mygrid)%pelist, commID=mpi_comm)
     endif
     par = .false.
-    call read_netcdf_inc(filename, increment_data, Atm, mygrid, testing,im_ret=im, jm_ret=jm, pf_ret=pf, tileCount=tileCount, tests_passed=tests_passed, rc=rc)
+    call read_netcdf_inc(filename, increment_data, Atm(mygrid), testing,im_ret=im, jm_ret=jm, pf_ret=pf, tileCount=tileCount, tests_passed=tests_passed, rc=rc)
     if(testing) then
       ! allocate 6 tiles for Atm
       write(6,*) "im, jm, etc are",im,jm,pf
@@ -464,7 +463,7 @@ module module_get_cubed_sphere_inc
     par = .false.
     ! read in 3? increments
     do i=1,3
-      call read_netcdf_inc(filenames(i), increment_data(i),Atm,mygrid,do_testing,im_ret=im, jm_ret=jm, pf_ret=pf, tileCount=tileCount, rc=rc)
+      call read_netcdf_inc(filenames(i), increment_data(i),Atm(mygrid),do_testing,im_ret=im, jm_ret=jm, pf_ret=pf, tileCount=tileCount, rc=rc)
     enddo
     ! allocate space for tendencies
     allocate(tendency%ua_inc(im,jm,pf))
