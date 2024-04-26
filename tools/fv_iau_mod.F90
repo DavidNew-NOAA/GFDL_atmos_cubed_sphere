@@ -109,12 +109,11 @@ module fv_iau_mod
   public IAU_initialize,getiauforcing,iau_external_data_type
 
 contains
-subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testing )
+subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, Init_parm, testing )
 !subroutine IAU_initialize (IPD_Control)
     type (IPD_control_type), intent(in) :: IPD_Control
     type (IAU_external_data_type), intent(inout) :: IAU_Data
-    type (fv_atmos_type),allocatable, intent(inout) :: Atm(:)
-    integer,          intent(in) :: mygrid
+    type (fv_atmos_type), intent(inout) :: Atm
     type (IPD_init_type),    intent(in) :: Init_parm
     logical, optional,       intent(in) :: testing
     ! local
@@ -298,7 +297,7 @@ subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testin
       call read_iau_forcing(IPD_Control,iau_state%inc1,'INPUT/'//trim(IPD_Control%iau_inc_files(1)))
     else
       write(6,*) 'calling read_netcdf_inc with ',trim(IPD_Control%iau_inc_files(1))
-      call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(1)),iau_state%inc1,Atm(mygrid),.false.)
+      call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(1)),iau_state%inc1,Atm)
     endif
     if (nfiles.EQ.1) then  ! only need to get incrments once since constant forcing over window
        call setiauforcing(IPD_Control,IAU_Data,iau_state%wt)
@@ -314,7 +313,7 @@ subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testin
        if(IPD_Control%iau_gaussian) then
          call read_iau_forcing(IPD_Control,iau_state%inc2,'INPUT/'//trim(IPD_Control%iau_inc_files(2)))
        else
-         call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(2)),iau_state%inc2,Atm(mygrid),.false.)
+         call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(2)),iau_state%inc2,Atm)
        endif
     endif
 !   print*,'in IAU init',dt,rdt
@@ -322,13 +321,12 @@ subroutine IAU_initialize (IPD_Control, IAU_Data, Atm, mygrid, Init_parm, testin
 
 end subroutine IAU_initialize
 
-subroutine getiauforcing(IPD_Control,IAU_Data,Atm,mygrid )
+subroutine getiauforcing(IPD_Control,IAU_Data,Atm)
 
    implicit none
    type (IPD_control_type), intent(in) :: IPD_Control
    type(IAU_external_data_type),  intent(inout) :: IAU_Data
-   type (fv_atmos_type),allocatable, intent(inout) :: Atm(:)
-   integer,          intent(in) :: mygrid
+   type (fv_atmos_type), intent(inout) :: Atm
    real(kind=kind_phys) t1,t2,sx,wx,wt,dtp
    integer n,i,j,k,sphum,kstep,nstep,itnext
 
@@ -405,7 +403,7 @@ subroutine getiauforcing(IPD_Control,IAU_Data,Atm,mygrid )
             if(IPD_Control%iau_gaussian) then
               call read_iau_forcing(IPD_Control,iau_state%inc2,'INPUT/'//trim(IPD_Control%iau_inc_files(itnext)))
             else
-              call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(itnext)),iau_state%inc2,Atm(mygrid),.false.)
+              call read_netcdf_inc('INPUT/'//trim(IPD_Control%iau_inc_files(itnext)),iau_state%inc2,Atm)
             endif
          endif
          call updateiauforcing(IPD_Control,IAU_Data,iau_state%wt)

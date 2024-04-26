@@ -144,7 +144,7 @@ module fv_treat_da_inc_mod
                                get_var3_r4, &
                                get_var1_real, &
                                check_var_exists
-  use module_get_cubed_sphere_inc, only: read_netcdf_inc_new, &
+  use module_get_cubed_sphere_inc, only: read_netcdf_inc, &
                                          iau_internal_data_type
   implicit none
   private
@@ -180,7 +180,7 @@ contains
     endif
 
     ! Read increments
-    call read_netcdf_inc_new(fname, increment_data, Atm, .false.)
+    call read_netcdf_inc(fname, increment_data, Atm)
 
     ! Wind increments
     ! ---------------
